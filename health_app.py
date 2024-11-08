@@ -5,21 +5,21 @@ import re
 from typing import Dict, Any, Optional, Generator, List
 import os
 from dotenv import load_dotenv
- 
-class GLP1Bot:      
+
+class GLP1Bot:
     def __init__(self):
         """Initialize the GLP1Bot with PPLX client and system prompts"""
         self.pplx_api_key = st.secrets["PPLX_API_KEY"]
         if not self.pplx_api_key:
             raise ValueError("PPLX API key not found in secrets")
-                   
+            
         self.pplx_model = st.secrets.get("PPLX_MODEL", "llama-3.1-sonar-large-128k-online")
-
+        
         self.pplx_headers = {
             "Authorization": f"Bearer {self.pplx_api_key}",
             "Content-Type": "application/json"
         }
-
+        
         self.pplx_system_prompt = """
 You are a specialized medical information assistant focused EXCLUSIVELY on GLP-1 medications (such as Ozempic, Wegovy, Mounjaro, etc.). You must:
 
@@ -277,36 +277,6 @@ def set_page_style():
     """Set page style using custom CSS"""
     st.markdown("""
     <style>
-        /* Reduce main title size */
-        .main h1 {
-            font-size: 1.8rem !important;
-            margin-bottom: 1rem;
-        }
-        
-        /* Reduce all other heading sizes */
-        .main h2 {
-            font-size: 1.5rem !important;
-        }
-        
-        .main h3 {
-            font-size: 1.2rem !important;
-            margin-bottom: 0.8rem;
-        }
-        
-        /* Adjust followup questions heading */
-        .followup-container h3 {
-            font-size: 1rem !important;
-            margin-bottom: 0.8rem;
-            color: #9c27b0;
-        }
-        
-        /* Adjust the "Previous Questions" section */
-        .chat-history h3 {
-            font-size: 1.1rem !important;
-            margin: 1rem 0;
-        }
-        
-        /* Rest of your existing CSS remains the same */
         .main {
             background-color: #f5f5f5;
         }
@@ -414,16 +384,6 @@ def set_page_style():
 def main():
     """Main application function"""
     try:
-        # Initialize session state variables
-        if 'chat_history' not in st.session_state:
-            st.session_state.chat_history = []
-            
-        if 'faq_used' not in st.session_state:
-            st.session_state.faq_used = False
-            
-        if 'previous_input' not in st.session_state:
-            st.session_state.previous_input = ""
-
         st.set_page_config(
             page_title="GLP-1 Medication Assistant",
             page_icon="💊",
@@ -432,18 +392,20 @@ def main():
         
         set_page_style()
         
-        # Check for environment variable
-        if not os.getenv("PPLX_API_KEY"):
-            st.error('Required PPLX API key not found. Please configure the PPLX API key in your .env file.')
+        if "PPLX_API_KEY" not in st.secrets:
+            st.error('Required PPLX API key not found. Please configure the PPLX API key in your Streamlit secrets.')
             st.stop()
         
-        # Modify title to use markdown for more control
-        st.markdown("# 💊 GLP-1 Medication Information Assistant", unsafe_allow_html=True)
+        st.title("💊 GLP-1 Medication Information Assistant")
+        st.markdown("""
+        <div class="info-box">
+        Get accurate, validated information specifically about GLP-1 medications, their usage, benefits, and side effects.
+        Our assistant specializes exclusively in GLP-1 medications and related topics.
         
-        # Now we can safely check faq_used
-        if not st.session_state.faq_used:
-            st.markdown("## 💡 Recommended Questions", unsafe_allow_html=True)
-            
+        <em>Please note: This assistant provides general information about GLP-1 medications only. Always consult your healthcare provider for medical advice.</em>
+        </div>
+        """, unsafe_allow_html=True)
+        
         bot = GLP1Bot()
         
         if 'chat_history' not in st.session_state:
@@ -470,7 +432,7 @@ def main():
 
             # Only show FAQ section if it hasn't been used
             if not st.session_state.faq_used:
-                st.markdown("## 💡 Recommended Questions", unsafe_allow_html=True)
+                st.markdown("### 💡 Recommended Questions:")
                 recommended_questions = [
                     "What dietary modifications are recommended while taking GLP-1 medications?",
                     "How do GLP-1 medications interact with other diabetes treatments?",
@@ -538,7 +500,7 @@ def main():
 
         if st.session_state.chat_history:
             st.markdown("---")
-            st.markdown("## 📝 Previous Questions", unsafe_allow_html=True)
+            st.markdown("### 📝 Previous Questions")
             for i, chat in enumerate(reversed(st.session_state.chat_history[:-1]), 1):
                 with st.expander(f"❓ Question {len(st.session_state.chat_history) - i}: {chat['query'][:50]}..."):
                     st.markdown(f"""
